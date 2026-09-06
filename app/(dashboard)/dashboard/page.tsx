@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, ArrowRight, Receipt, PiggyBank, Sparkles } from 'lucide-react';
+import { Plus, ArrowRight, Receipt, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { MonthSelector } from '@/components/dashboard/MonthSelector';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';

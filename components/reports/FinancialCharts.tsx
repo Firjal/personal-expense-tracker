@@ -89,14 +89,26 @@ export function FinancialCharts({ transactions, month, year }: FinancialChartsPr
     ];
   }, [transactions]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface ChartTooltipEntry {
+    name?: string;
+    value?: number;
+    color?: string;
+  }
+
+  interface ChartTooltipProps {
+    active?: boolean;
+    payload?: ChartTooltipEntry[];
+    label?: string | number;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-xl text-xs space-y-1">
           <p className="font-semibold text-slate-200">{`Tanggal ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: ChartTooltipEntry, index: number) => (
             <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {formatRupiah(entry.value)}
+              {entry.name}: {formatRupiah(entry.value || 0)}
             </p>
           ))}
         </div>
@@ -105,12 +117,12 @@ export function FinancialCharts({ transactions, month, year }: FinancialChartsPr
     return null;
   };
 
-  const CategoryTooltip = ({ active, payload }: any) => {
+  const CategoryTooltip = ({ active, payload }: ChartTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-xl text-xs space-y-1">
           <p className="font-semibold text-slate-200">{payload[0].name}</p>
-          <p className="text-indigo-400 font-bold">{formatRupiah(payload[0].value)}</p>
+          <p className="text-indigo-400 font-bold">{formatRupiah(payload[0].value || 0)}</p>
         </div>
       );
     }

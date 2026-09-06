@@ -1,4 +1,4 @@
-import { Category, Transaction, SavingsGoal, SavingsTransaction, Profile } from '@/lib/types';
+import { Category, Transaction, SavingsGoal, SavingsTransaction } from '@/lib/types';
 
 const STORAGE_KEYS = {
   USER: 'pet_demo_user',
@@ -92,7 +92,7 @@ export const DemoStore = {
   },
 
   addCategory(userId: string, name: string, type: 'expense' | 'income' | 'savings'): Category {
-    const categories = this.getCategories(userId);
+    this.getCategories(userId);
     const now = new Date().toISOString();
     const newCat: Category = {
       id: 'cat-' + Math.random().toString(36).substr(2, 9),

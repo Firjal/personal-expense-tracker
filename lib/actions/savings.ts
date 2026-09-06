@@ -169,7 +169,7 @@ export async function addSavingsDeposit(
     .eq('user_id', userId)
     .eq('type', 'savings');
 
-  let savingsCategoryId = categories && categories.length > 0 ? categories[0].id : null;
+  const savingsCategoryId = categories && categories.length > 0 ? categories[0].id : null;
 
   // 3. Create transaction record of type 'savings'
   const txRes = await createTransaction(userId, {

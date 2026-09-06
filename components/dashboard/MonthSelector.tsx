@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { BULAN_INDONESIA, formatBulanTahun } from '@/lib/utils/format';
+import { BULAN_INDONESIA } from '@/lib/utils/format';
 
 interface MonthSelectorProps {
   currentMonth: number; // 1-12
