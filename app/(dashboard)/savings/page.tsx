@@ -5,7 +5,7 @@ import { Plus, PiggyBank, Target } from 'lucide-react';
 import { SavingsGoalCard } from '@/components/savings/SavingsGoalCard';
 import { SavingsGoalModal } from '@/components/savings/SavingsGoalModal';
 import { AddSavingsFundModal } from '@/components/savings/AddSavingsFundModal';
-import { DemoStore } from '@/lib/storage/demo-store';
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
 import {
   fetchSavingsGoals,
   createSavingsGoal,
@@ -17,6 +17,8 @@ import { SavingsGoal } from '@/lib/types';
 import { formatRupiah } from '@/lib/utils/format';
 
 export default function SavingsPage() {
+  const { userId, isReady } = useCurrentUser();
+
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,18 +29,13 @@ export default function SavingsPage() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositGoal, setDepositGoal] = useState<SavingsGoal | null>(null);
 
-  const getUserId = (): string => {
-    const user = DemoStore.getUser();
-    return user ? user.id : 'demo-user-123';
-  };
-
   const loadGoals = useCallback(async () => {
+    if (!isReady) return;
     setIsLoading(true);
-    const userId = getUserId();
     const data = await fetchSavingsGoals(userId);
     setGoals(data);
     setIsLoading(false);
-  }, []);
+  }, [userId, isReady]);
 
   useEffect(() => {
     loadGoals();
@@ -49,7 +46,6 @@ export default function SavingsPage() {
     target_amount: number;
     deadline?: string;
   }) => {
-    const userId = getUserId();
     let res;
     if (editingGoal) {
       res = await updateSavingsGoal(userId, editingGoal.id, data);
@@ -65,7 +61,6 @@ export default function SavingsPage() {
 
   const handleDeleteGoal = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus target tabungan ini?')) {
-      const userId = getUserId();
       const res = await deleteSavingsGoal(userId, id);
       if (res.success) {
         loadGoals();
@@ -79,7 +74,6 @@ export default function SavingsPage() {
     date: string,
     notes?: string
   ) => {
-    const userId = getUserId();
     const res = await addSavingsDeposit(userId, goalId, amount, date, notes);
     if (res.success) {
       loadGoals();

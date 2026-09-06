@@ -7,7 +7,7 @@ import { MonthSelector } from '@/components/dashboard/MonthSelector';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { TransactionFormModal } from '@/components/transactions/TransactionFormModal';
 import { TransactionList } from '@/components/transactions/TransactionList';
-import { DemoStore } from '@/lib/storage/demo-store';
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import {
   fetchTransactions,
@@ -20,6 +20,8 @@ import { fetchCategories } from '@/lib/actions/categories';
 import { Transaction, Category, MonthlyFinancialSummary, TransactionType } from '@/lib/types';
 
 export default function DashboardPage() {
+  const { userId, isReady } = useCurrentUser();
+
   const currentDate = new Date();
   const [currentMonth, setCurrentMonth] = useState<number>(currentDate.getMonth() + 1);
   const [currentYear, setCurrentYear] = useState<number>(currentDate.getFullYear());
@@ -45,14 +47,9 @@ export default function DashboardPage() {
   const [selectedType, setSelectedType] = useState<TransactionType | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  const getUserId = (): string => {
-    const user = DemoStore.getUser();
-    return user ? user.id : 'demo-user-123';
-  };
-
   const loadData = useCallback(async () => {
+    if (!isReady) return;
     setIsLoading(true);
-    const userId = getUserId();
 
     const [sumData, txData, catData] = await Promise.all([
       getMonthlySummary(userId, currentMonth, currentYear),
@@ -70,7 +67,7 @@ export default function DashboardPage() {
     setTransactions(txData);
     setCategories(catData);
     setIsLoading(false);
-  }, [currentMonth, currentYear, selectedType, selectedCategory, searchQuery]);
+  }, [userId, isReady, currentMonth, currentYear, selectedType, selectedCategory, searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -89,7 +86,6 @@ export default function DashboardPage() {
     transaction_date: string;
     notes?: string;
   }) => {
-    const userId = getUserId();
     let res;
     if (editingTransaction) {
       res = await updateTransaction(userId, editingTransaction.id, data);
@@ -104,7 +100,6 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const userId = getUserId();
     const res = await deleteTransaction(userId, id);
     if (res.success) {
       loadData();

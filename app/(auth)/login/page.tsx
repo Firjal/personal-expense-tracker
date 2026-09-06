@@ -1,144 +1,128 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Wallet, LogIn, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
-import { loginUser } from '@/lib/actions/auth';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Wallet, AlertCircle } from 'lucide-react';
+import { signInWithGoogle } from '@/lib/actions/auth';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const searchParams = useSearchParams();
+
   const [errorMsg, setErrorMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Show error passed via URL query param (e.g. from OAuth callback failure)
+  useEffect(() => {
+    const urlError = searchParams.get('error');
+    if (urlError) {
+      setErrorMsg(decodeURIComponent(urlError));
+    }
+  }, [searchParams]);
+
+  const handleGoogleLogin = async () => {
+    if (isGoogleLoading) return;
     setErrorMsg('');
+    setIsGoogleLoading(true);
 
-    if (!email || !password) {
-      setErrorMsg('Email dan password wajib diisi.');
+    const res = await signInWithGoogle();
+
+    if (res.error) {
+      setErrorMsg(res.error);
+      setIsGoogleLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    const res = await loginUser(email, password);
-    setIsLoading(false);
-
-    if (res.success) {
-      router.push('/dashboard');
-      router.refresh();
-    } else {
-      setErrorMsg(res.error || 'Login gagal. Periksa kembali email dan password Anda.');
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setEmail('user@example.com');
-    setPassword('password123');
-    setIsLoading(true);
-    const res = await loginUser('user@example.com', 'password123');
-    setIsLoading(false);
-    if (res.success) {
-      router.push('/dashboard');
-      router.refresh();
+    if (res.url) {
+      window.location.href = res.url;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10 space-y-6">
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/30">
-              <Wallet className="w-6 h-6 text-white" />
+      <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10 space-y-8">
+
+        {/* Logo & heading */}
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-600/30">
+              <Wallet className="w-8 h-8 text-white" />
             </div>
-          </Link>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Selamat Datang Kembali
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Masuk ke akun Personal Expense Tracker Anda
-          </p>
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              Personal Expense Tracker
+            </h1>
+            <p className="text-sm text-slate-400">
+              Masuk untuk mengelola keuangan Anda
+            </p>
+          </div>
         </div>
 
+        {/* Error message */}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs sm:text-sm flex items-center gap-2.5">
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Alamat Email
-            </label>
-            <input
-              type="email"
-              placeholder="nama@email.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Password
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-xs text-indigo-400 hover:underline font-medium"
-              >
-                Lupa Password?
-              </Link>
-            </div>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <LogIn className="w-4 h-4" />
-            {isLoading ? 'Memproses...' : 'Masuk Ke Akun'}
-          </button>
-        </form>
-
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-slate-800 w-full" />
-          <span className="bg-slate-900 px-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider absolute">
-            atau
-          </span>
-        </div>
-
+        {/* Google Sign-In button */}
         <button
-          onClick={handleDemoLogin}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-950 border border-indigo-500/30 hover:border-indigo-500/60 text-indigo-300 font-semibold text-xs transition-all hover:bg-indigo-500/10"
+          id="btn-google-login"
+          onClick={handleGoogleLogin}
+          disabled={isGoogleLoading}
+          className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-semibold text-sm shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Sparkles className="w-4 h-4 text-indigo-400" />
-          Masuk Langsung (Mode Demo Instant)
+          {isGoogleLoading ? (
+            <>
+              <svg
+                className="animate-spin w-5 h-5 text-slate-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                />
+              </svg>
+              <span>Mengarahkan ke Google...</span>
+            </>
+          ) : (
+            <>
+              {/* Official Google G logo */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 48 48"
+                className="w-5 h-5"
+                aria-hidden="true"
+              >
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                <path fill="none" d="M0 0h48v48H0z" />
+              </svg>
+              <span>Lanjutkan dengan Google</span>
+            </>
+          )}
         </button>
 
-        <p className="text-center text-xs text-slate-400">
-          Belum punya akun?{' '}
-          <Link href="/register" className="text-indigo-400 hover:underline font-bold">
-            Daftar Sekarang <ArrowRight className="w-3 h-3 inline" />
-          </Link>
+        <p className="text-center text-xs text-slate-500">
+          Dengan masuk, Anda menyetujui kebijakan privasi kami.
         </p>
       </div>
     </div>

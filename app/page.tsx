@@ -19,20 +19,12 @@ export default function LandingPage() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition-all"
-          >
-            Masuk
-          </Link>
-          <Link
-            href="/register"
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
-          >
-            Daftar Gratis
-          </Link>
-        </div>
+        <Link
+          href="/login"
+          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
+        >
+          Masuk
+        </Link>
       </header>
 
       {/* Hero Section */}
@@ -54,17 +46,11 @@ export default function LandingPage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <Link
-            href="/dashboard"
+            href="/login"
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
-            Buka Dashboard
+            Masuk dengan Google
             <ArrowRight className="w-5 h-5" />
-          </Link>
-          <Link
-            href="/login"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-semibold text-base transition-all"
-          >
-            Coba Mode Demo
           </Link>
         </div>
 

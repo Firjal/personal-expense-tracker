@@ -1,6 +1,51 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
 
+/**
+ * Initiate Google OAuth sign-in via Supabase.
+ *
+ * Returns { url } on success — the caller must redirect the browser to that URL.
+ * Supabase will handle the OAuth flow and redirect back to /auth/callback.
+ */
+export async function signInWithGoogle(): Promise<{ url?: string; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return {
+      error:
+        'Google login membutuhkan konfigurasi Supabase. ' +
+        'Isi NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY di file .env.local.',
+    };
+  }
+
+  const supabase = createClient();
+
+  // redirectTo must be an absolute URL that is registered in:
+  //   - Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+  //   - Google Cloud Console → OAuth 2.0 → Authorized redirect URIs (pointing to Supabase callback)
+  const redirectTo =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/auth/callback`
+      : `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+      queryParams: {
+        // Request offline access so Supabase can refresh the token.
+        access_type: 'offline',
+        // Force account picker so users can switch accounts easily.
+        prompt: 'select_account',
+      },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { url: data.url };
+}
+
 export async function loginUser(email: string, password: string) {
   if (!isSupabaseConfigured()) {
     // Demo mode login

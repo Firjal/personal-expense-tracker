@@ -6,12 +6,14 @@ import { MonthSelector } from '@/components/dashboard/MonthSelector';
 import { FinancialCharts } from '@/components/reports/FinancialCharts';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { ExportCsvButton } from '@/components/export/ExportCsvButton';
-import { DemoStore } from '@/lib/storage/demo-store';
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
 import { fetchTransactions, getMonthlySummary } from '@/lib/actions/transactions';
 import { Transaction, MonthlyFinancialSummary } from '@/lib/types';
 import { formatRupiah } from '@/lib/utils/format';
 
 export default function ReportsPage() {
+  const { userId, isReady } = useCurrentUser();
+
   const currentDate = new Date();
   const [currentMonth, setCurrentMonth] = useState<number>(currentDate.getMonth() + 1);
   const [currentYear, setCurrentYear] = useState<number>(currentDate.getFullYear());
@@ -27,14 +29,9 @@ export default function ReportsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getUserId = (): string => {
-    const user = DemoStore.getUser();
-    return user ? user.id : 'demo-user-123';
-  };
-
   const loadData = useCallback(async () => {
+    if (!isReady) return;
     setIsLoading(true);
-    const userId = getUserId();
 
     const [sumData, txData] = await Promise.all([
       getMonthlySummary(userId, currentMonth, currentYear),
@@ -44,7 +41,7 @@ export default function ReportsPage() {
     setSummary(sumData);
     setTransactions(txData);
     setIsLoading(false);
-  }, [currentMonth, currentYear]);
+  }, [userId, isReady, currentMonth, currentYear]);
 
   useEffect(() => {
     loadData();
