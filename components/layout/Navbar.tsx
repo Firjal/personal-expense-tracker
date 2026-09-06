@@ -17,7 +17,7 @@ export function Navbar({ user }: NavbarProps) {
 
   const handleLogout = async () => {
     await logoutUser();
-    router.push('/login');
+    router.push('/');
     router.refresh();
   };
 

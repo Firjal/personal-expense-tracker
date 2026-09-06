@@ -18,19 +18,12 @@ export default function LandingPage() {
             ExpenseTracker
           </span>
         </div>
-
-        <Link
-          href="/login"
-          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
-        >
-          Masuk
-        </Link>
       </header>
 
       {/* Hero Section */}
       <main className="max-w-4xl mx-auto px-4 text-center my-auto py-12 relative z-10 space-y-8">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
-          <ShieldCheck className="w-4 h-4" /> Row Level Security & Data Isolation
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold tracking-wide">
+          <ShieldCheck className="w-4 h-4" /> Privasi & Keamanan Data Terjamin
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
@@ -41,15 +34,15 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-          Catat pengeluaran harian, alokasikan pemasukan, dan wujudkan target tabungan Anda dengan rekap bulanan permanen yang tidak pernah hilang.
+          Catat pengeluaran harian, pantau pemasukan, dan capai target tabungan Anda dengan rekap data permanen yang rapi dan aman.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <Link
             href="/login"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all active:scale-95 flex items-center justify-center gap-2.5"
           >
-            Masuk dengan Google
+            Mulai Sekarang
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

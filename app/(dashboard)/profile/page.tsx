@@ -12,7 +12,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await logoutUser();
-    router.push('/login');
+    router.push('/');
     router.refresh();
   };
 
