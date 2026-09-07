@@ -8,10 +8,33 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://jall-tracker.vercel.app'),
   title: 'JallTracker',
   applicationName: 'JallTracker',
-  description:
-    'Aplikasi pencatat pengeluaran, pemasukan, dan target tabungan pribadi yang aman, modern, dan scalable.',
+  description: 'Kelola Keuangan Pribadi dengan Lebih Cerdas & Teratur',
+  openGraph: {
+    title: 'JallTracker',
+    description: 'Kelola Keuangan Pribadi dengan Lebih Cerdas & Teratur',
+    url: 'https://jall-tracker.vercel.app/',
+    siteName: 'JallTracker',
+    locale: 'id_ID',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'JallTracker — Kelola Keuangan Pribadi dengan Lebih Cerdas & Teratur',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'JallTracker',
+    description: 'Kelola Keuangan Pribadi dengan Lebih Cerdas & Teratur',
+    images: ['/og-image.png'],
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
