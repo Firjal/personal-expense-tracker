@@ -12,6 +12,7 @@ export async function fetchCategories(userId: string): Promise<Category[]> {
     .from('categories')
     .select('*')
     .eq('user_id', userId)
+    .neq('type', 'savings')
     .order('name');
 
   if (error) {

@@ -100,7 +100,6 @@ export function CategoryManager({
             {[
               { label: 'Pengeluaran', type: 'expense' },
               { label: 'Pemasukan', type: 'income' },
-              { label: 'Tabungan', type: 'savings' },
             ].map(tab => (
               <button
                 key={tab.type}
