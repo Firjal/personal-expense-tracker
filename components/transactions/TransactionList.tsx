@@ -103,9 +103,6 @@ export function TransactionList({
               <option value="expense" className="bg-slate-900 text-slate-200">
                 Pengeluaran
               </option>
-              <option value="savings" className="bg-slate-900 text-slate-200">
-                Tabungan
-              </option>
             </select>
           </div>
 
