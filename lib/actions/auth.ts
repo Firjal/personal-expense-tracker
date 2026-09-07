@@ -1,5 +1,6 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
+import { ensureUserProfile } from '@/lib/supabase/profile';
 
 /**
  * Initiate Google OAuth sign-in via Supabase.
@@ -69,6 +70,10 @@ export async function loginUser(email: string, password: string) {
     return { success: false, error: error.message };
   }
 
+  if (data.user) {
+    await ensureUserProfile(supabase, data.user);
+  }
+
   return { success: true, user: data.user };
 }
 
@@ -97,6 +102,10 @@ export async function registerUser(email: string, password: string, fullName: st
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  if (data.user) {
+    await ensureUserProfile(supabase, data.user);
   }
 
   return { success: true, user: data.user };

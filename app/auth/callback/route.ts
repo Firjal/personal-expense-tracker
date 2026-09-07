@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { ensureUserProfile } from '@/lib/supabase/profile';
 
 /**
  * OAuth Callback Route
@@ -57,13 +58,18 @@ export async function GET(request: Request) {
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     console.error('[auth/callback] exchangeCodeForSession error:', error.message);
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent('Login Google gagal. Silakan coba lagi.')}`
     );
+  }
+
+  // Ensure user has a profile row in public.profiles table
+  if (data?.user) {
+    await ensureUserProfile(supabase, data.user);
   }
 
   // Successful login — redirect to the originally requested protected page

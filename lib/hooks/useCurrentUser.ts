@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
+import { ensureUserProfile } from '@/lib/supabase/profile';
 
 export interface CurrentUser {
   id: string;
@@ -40,6 +41,8 @@ export function useCurrentUser() {
             data.user.user_metadata?.name ||
             data.user.email?.split('@')[0],
         });
+        // Pastikan row profile ada di database
+        ensureUserProfile(supabase, data.user);
       }
       setIsReady(true);
     });

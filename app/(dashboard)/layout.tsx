@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { DemoStore } from '@/lib/storage/demo-store';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { ensureUserProfile } from '@/lib/supabase/profile';
 
 export default function DashboardLayout({
   children,
@@ -26,6 +27,7 @@ export default function DashboardLayout({
             email: data.user.email,
             full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
           });
+          ensureUserProfile(supabase, data.user);
         }
       });
     }
