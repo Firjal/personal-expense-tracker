@@ -23,7 +23,7 @@ export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> 
   return data as SavingsGoal[];
 }
 
-// ─── Total savings = sum of ALL savings_transactions for the user ─────────────
+// ─── Total savings = sum of ALL active savings transactions for the user ──────
 // Can be all-time (default) or filtered by month and year.
 export async function fetchTotalSavings(
   userId: string,
@@ -35,9 +35,10 @@ export async function fetchTotalSavings(
 
   const supabase = createClient();
   let query = supabase
-    .from('savings_transactions')
+    .from('transactions')
     .select('amount')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('type', 'savings');
 
   if (filter?.month && filter?.year) {
     const startOfMonth = `${filter.year}-${String(filter.month).padStart(2, '0')}-01`;
@@ -237,20 +238,50 @@ export async function addSavingsDeposit(
     targetGoal = goal as SavingsGoal;
   }
 
-  // Insert into savings_transactions (source of truth for savings balance)
-  const { error: stErr } = await supabase.from('savings_transactions').insert({
+  const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined;
+  const description = targetGoal ? `Tabungan ${targetGoal.name}` : (notes || 'Tabungan Bebas');
+
+  // 1. Insert into transactions table (type = 'savings', category_id = null)
+  const txPayload: Record<string, unknown> = {
+    user_id: userId,
+    category_id: null,
+    type: 'savings',
+    description,
+    amount: Number(amount),
+    transaction_date: transactionDate,
+    notes: notes || null,
+  };
+  if (txId) txPayload.id = txId;
+
+  const { data: createdTx, error: txErr } = await supabase
+    .from('transactions')
+    .insert(txPayload)
+    .select('id')
+    .single();
+
+  if (txErr) {
+    return { success: false, error: txErr.message };
+  }
+
+  const generatedId = createdTx?.id || txId;
+
+  // 2. Insert into savings_transactions with matching ID
+  const stPayload: Record<string, unknown> = {
     user_id: userId,
     savings_goal_id: savingsGoalId || null,
     amount: Number(amount),
     transaction_date: transactionDate,
     notes: notes || null,
-  });
+  };
+  if (generatedId) stPayload.id = generatedId;
+
+  const { error: stErr } = await supabase.from('savings_transactions').insert(stPayload);
 
   if (stErr) {
-    return { success: false, error: stErr.message };
+    console.error('Error inserting savings_transactions:', stErr);
   }
 
-  // If linked to a target, update savings goal current_amount
+  // 3. If linked to a target, update savings goal current_amount
   let updatedGoal: SavingsGoal | undefined = undefined;
   if (targetGoal && savingsGoalId) {
     const newCurrentAmount = Number(targetGoal.current_amount) + Number(amount);

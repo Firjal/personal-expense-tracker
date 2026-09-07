@@ -103,9 +103,13 @@ export function TransactionList({
               <option value="income" className="bg-slate-900 text-slate-200">
                 Pemasukan
               </option>
+              <option value="savings" className="bg-slate-900 text-slate-200">
+                Tabungan
+              </option>
             </select>
           </div>
 
+          {selectedType !== 'savings' && (
           <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2 py-1">
             <select
               value={selectedCategory}
@@ -125,6 +129,7 @@ export function TransactionList({
                 ))}
             </select>
           </div>
+          )}
         </div>
       </div>
 

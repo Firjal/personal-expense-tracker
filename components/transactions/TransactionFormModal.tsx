@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, PlusCircle, Save, AlertCircle } from 'lucide-react';
+import { X, PlusCircle, Save, AlertCircle, PiggyBank } from 'lucide-react';
 import { Category, Transaction, ActiveTransactionType, TransactionType } from '@/lib/types';
 import { formatRupiah } from '@/lib/utils/format';
 
@@ -38,9 +38,12 @@ export function TransactionFormModal({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Detect if editing a savings transaction (read-only type)
+  const isEditingSavings = !!(initialData && initialData.type === 'savings');
+
   useEffect(() => {
     if (initialData) {
-      setType(initialData.type === 'income' ? 'income' : 'expense');
+      setType(initialData.type === 'savings' ? 'expense' : (initialData.type === 'income' ? 'income' : 'expense'));
       setDescription(initialData.description);
       setAmount(String(initialData.amount));
       setCategoryId(initialData.category_id || '');
@@ -85,7 +88,7 @@ export function TransactionFormModal({
       setErrorMsg('Nominal transaksi harus lebih besar dari Rp0.');
       return;
     }
-    if (!categoryId) {
+    if (!isEditingSavings && !categoryId) {
       setErrorMsg('Kategori transaksi wajib dipilih.');
       return;
     }
@@ -98,8 +101,8 @@ export function TransactionFormModal({
     const result = await onSubmit({
       description: description.trim(),
       amount: numAmount,
-      type,
-      category_id: categoryId,
+      type: isEditingSavings ? 'savings' : type,
+      category_id: isEditingSavings ? null : categoryId,
       transaction_date: transactionDate,
       notes: notes.trim() || undefined,
     });
@@ -137,11 +140,17 @@ export function TransactionFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tipe Transaksi: Pengeluaran & Pemasukan saja */}
+          {/* Tipe Transaksi */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Tipe Transaksi
             </label>
+            {isEditingSavings ? (
+              <div className="flex items-center gap-2 py-2.5 px-4 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 text-sm font-semibold">
+                <PiggyBank className="w-4 h-4" />
+                Tabungan
+              </div>
+            ) : (
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Pengeluaran', value: 'expense' as const, color: 'peer-checked:bg-rose-500/20 peer-checked:text-rose-400 peer-checked:border-rose-500/40' },
@@ -166,6 +175,7 @@ export function TransactionFormModal({
                 </label>
               ))}
             </div>
+            )}
           </div>
 
           {/* Keterangan */}
@@ -184,7 +194,7 @@ export function TransactionFormModal({
           </div>
 
           {/* Nominal & Kategori */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 ${isEditingSavings ? '' : 'sm:grid-cols-2'} gap-4`}>
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Nominal (Rp) <span className="text-rose-400">*</span>
@@ -206,6 +216,7 @@ export function TransactionFormModal({
               )}
             </div>
 
+            {!isEditingSavings && (
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Kategori <span className="text-rose-400">*</span>
@@ -227,6 +238,7 @@ export function TransactionFormModal({
                 )}
               </select>
             </div>
+            )}
           </div>
 
           {/* Tanggal */}

@@ -38,6 +38,10 @@ export default function TransactionsPage() {
 
   const handleTypeChange = (type: TransactionType | 'all') => {
     setSelectedType(type);
+    // Clear category filter when switching to savings (savings have no categories)
+    if (type === 'savings') {
+      setSelectedCategory('');
+    }
   };
 
   const loadData = useCallback(async () => {

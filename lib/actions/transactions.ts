@@ -2,7 +2,6 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
 import { Transaction, TransactionType, MonthlyFinancialSummary } from '@/lib/types';
 import { getMonthDateRange } from '@/lib/utils/format';
-import { fetchTotalSavings } from './savings';
 
 export interface TransactionFilterOptions {
   month?: number;
@@ -180,7 +179,7 @@ export async function updateTransaction(
       description: data.description.trim(),
       amount: Number(data.amount),
       type: data.type,
-      category_id: data.category_id || null,
+      category_id: data.type === 'savings' ? null : (data.category_id || null),
       transaction_date: data.transaction_date,
       notes: data.notes?.trim() || null,
     });
@@ -189,13 +188,66 @@ export async function updateTransaction(
   }
 
   const supabase = createClient();
+
+  // If transaction is of type 'savings', synchronize savings_transactions and target
+  if (data.type === 'savings') {
+    const { data: existingTx } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (existingTx) {
+      const diff = Number(data.amount) - Number(existingTx.amount);
+
+      // Check linked savings_transactions record
+      const { data: stRecord } = await supabase
+        .from('savings_transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (stRecord) {
+        await supabase
+          .from('savings_transactions')
+          .update({
+            amount: Number(data.amount),
+            transaction_date: data.transaction_date,
+            notes: data.notes?.trim() || null,
+          })
+          .eq('id', id);
+
+        // Adjust target current_amount with difference
+        if (stRecord.savings_goal_id && diff !== 0) {
+          const { data: goal } = await supabase
+            .from('savings_goals')
+            .select('current_amount')
+            .eq('id', stRecord.savings_goal_id)
+            .single();
+
+          if (goal) {
+            const newCurrent = Math.max(0, Number(goal.current_amount) + diff);
+            await supabase
+              .from('savings_goals')
+              .update({
+                current_amount: newCurrent,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', stRecord.savings_goal_id);
+          }
+        }
+      }
+    }
+  }
+
   const { data: updated, error } = await supabase
     .from('transactions')
     .update({
       description: data.description.trim(),
       amount: Number(data.amount),
       type: data.type,
-      category_id: data.category_id || null,
+      category_id: data.type === 'savings' ? null : (data.category_id || null),
       transaction_date: data.transaction_date,
       notes: data.notes?.trim() || null,
       updated_at: new Date().toISOString(),
@@ -222,6 +274,46 @@ export async function deleteTransaction(
   }
 
   const supabase = createClient();
+
+  // Fetch transaction to see if it is of type 'savings'
+  const { data: tx } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .single();
+
+  if (tx && tx.type === 'savings') {
+    // Check if linked to savings_transactions
+    const { data: stRecord } = await supabase
+      .from('savings_transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (stRecord) {
+      if (stRecord.savings_goal_id) {
+        const { data: goal } = await supabase
+          .from('savings_goals')
+          .select('current_amount')
+          .eq('id', stRecord.savings_goal_id)
+          .single();
+
+        if (goal) {
+          const newCurrent = Math.max(0, Number(goal.current_amount) - Number(tx.amount));
+          await supabase
+            .from('savings_goals')
+            .update({
+              current_amount: newCurrent,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', stRecord.savings_goal_id);
+        }
+      }
+      await supabase.from('savings_transactions').delete().eq('id', id);
+    }
+  }
+
   const { error } = await supabase
     .from('transactions')
     .delete()
@@ -244,7 +336,7 @@ export async function getMonthlySummary(
 
   let totalIncome = 0;
   let totalExpense = 0;
-  let legacySavings = 0;
+  let totalSavings = 0;
 
   let largestExpense: { description: string; amount: number; categoryName: string } | null = null;
   let largestIncome: { description: string; amount: number; categoryName: string } | null = null;
@@ -271,7 +363,7 @@ export async function getMonthlySummary(
       }
       categoryTotals[catName].amount += amt;
     } else if (t.type === 'savings') {
-      legacySavings += amt;
+      totalSavings += amt;
     }
   });
 
@@ -282,10 +374,6 @@ export async function getMonthlySummary(
       topExpenseCategory = { name: cat.name, amount: cat.amount };
     }
   });
-
-  // Calculate total savings from the savings system for this month (+ legacy savings if any)
-  const savingsFromSystem = await fetchTotalSavings(userId, { month, year });
-  const totalSavings = savingsFromSystem + legacySavings;
 
   // Formula: Sisa Uang = Total Pemasukan - Total Pengeluaran - Total Uang Tabungan
   const balance = totalIncome - totalExpense - totalSavings;

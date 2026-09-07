@@ -150,12 +150,12 @@ export const DemoStore = {
       .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
   },
 
-  addTransaction(userId: string, data: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Transaction {
+  addTransaction(userId: string, data: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }): Transaction {
     const all: Transaction[] = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || '[]') : [];
     const now = new Date().toISOString();
     const newTx: Transaction = {
       ...data,
-      id: 'tx-' + Math.random().toString(36).substr(2, 9),
+      id: data.id || ('tx-' + Math.random().toString(36).substr(2, 9)),
       user_id: userId,
       created_at: now,
       updated_at: now,
@@ -177,12 +177,43 @@ export const DemoStore = {
     const index = all.findIndex(t => t.id === id && t.user_id === userId);
     if (index === -1) return null;
 
+    const oldTx = all[index];
+    const newAmount = data.amount !== undefined ? Number(data.amount) : oldTx.amount;
+    const diff = newAmount - oldTx.amount;
+
     all[index] = {
       ...all[index],
       ...data,
       updated_at: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(all));
+
+    // If transaction is of type 'savings', synchronize savings_transactions and target
+    if (oldTx.type === 'savings' || data.type === 'savings') {
+      const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
+      const stIndex = allST.findIndex(st => st.id === id && st.user_id === userId);
+      if (stIndex !== -1) {
+        const goalId = allST[stIndex].savings_goal_id;
+        allST[stIndex] = {
+          ...allST[stIndex],
+          amount: newAmount,
+          transaction_date: data.transaction_date || allST[stIndex].transaction_date,
+          notes: data.notes !== undefined ? (data.notes || null) : allST[stIndex].notes,
+        };
+        localStorage.setItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS, JSON.stringify(allST));
+
+        // Adjust target current_amount with difference
+        if (goalId && diff !== 0) {
+          const allGoals: SavingsGoal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS) || '[]');
+          const gIndex = allGoals.findIndex(g => g.id === goalId && g.user_id === userId);
+          if (gIndex !== -1) {
+            allGoals[gIndex].current_amount = Math.max(0, allGoals[gIndex].current_amount + diff);
+            allGoals[gIndex].updated_at = new Date().toISOString();
+            localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(allGoals));
+          }
+        }
+      }
+    }
 
     const categories = this.getCategories(userId);
     const cat = categories.find(c => c.id === all[index].category_id);
@@ -195,6 +226,29 @@ export const DemoStore = {
   deleteTransaction(userId: string, id: string): boolean {
     if (typeof window === 'undefined') return false;
     const all: Transaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || '[]');
+    const tx = all.find(t => t.id === id && t.user_id === userId);
+    if (!tx) return false;
+
+    // If transaction is of type 'savings', adjust target current_amount and remove savings_transactions record
+    if (tx.type === 'savings') {
+      const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
+      const stIndex = allST.findIndex(st => st.id === id && st.user_id === userId);
+      if (stIndex !== -1) {
+        const goalId = allST[stIndex].savings_goal_id;
+        if (goalId) {
+          const allGoals: SavingsGoal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS) || '[]');
+          const gIndex = allGoals.findIndex(g => g.id === goalId && g.user_id === userId);
+          if (gIndex !== -1) {
+            allGoals[gIndex].current_amount = Math.max(0, allGoals[gIndex].current_amount - tx.amount);
+            allGoals[gIndex].updated_at = new Date().toISOString();
+            localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(allGoals));
+          }
+        }
+        const filteredST = allST.filter(st => !(st.id === id && st.user_id === userId));
+        localStorage.setItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS, JSON.stringify(filteredST));
+      }
+    }
+
     const filtered = all.filter(t => !(t.id === id && t.user_id === userId));
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(filtered));
     return true;
@@ -263,21 +317,21 @@ export const DemoStore = {
     return true;
   },
 
-  // Total savings = sum of all savings_transactions for user (optionally filtered by month and year)
+  // Total savings = sum of all active savings transactions for user
   getTotalSavings(userId: string, filter?: { month?: number; year?: number }): number {
     if (typeof window === 'undefined') return 0;
-    const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
-    return allST
-      .filter(st => {
-        if (st.user_id !== userId) return false;
+    const allTx: Transaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || '[]');
+    return allTx
+      .filter(t => {
+        if (t.user_id !== userId || t.type !== 'savings') return false;
         if (filter?.month && filter?.year) {
-          const dStr = st.transaction_date.substring(0, 10);
+          const dStr = t.transaction_date.substring(0, 10);
           const [y, m] = dStr.split('-').map(Number);
           return y === filter.year && m === filter.month;
         }
         return true;
       })
-      .reduce((sum, st) => sum + Number(st.amount), 0);
+      .reduce((sum, t) => sum + Number(t.amount), 0);
   },
 
   addSavingsDeposit(
@@ -288,6 +342,11 @@ export const DemoStore = {
     notes?: string
   ): { goal: SavingsGoal | null } {
     let updatedGoal: SavingsGoal | null = null;
+    const txId = 'stx-' + Math.random().toString(36).substr(2, 9);
+
+    const goals = this.getSavingsGoals(userId);
+    const goal = savingsGoalId ? goals.find(g => g.id === savingsGoalId) : null;
+    const goalName = goal ? goal.name : 'Tabungan';
 
     // 1. If linked to a goal, update Savings Goal current_amount
     if (savingsGoalId && typeof window !== 'undefined') {
@@ -301,11 +360,22 @@ export const DemoStore = {
       }
     }
 
-    // 2. Record savings transaction entry (separate from regular transactions table)
+    // 2. Add to transactions table (type = 'savings', category_id = null)
+    this.addTransaction(userId, {
+      id: txId,
+      category_id: null,
+      type: 'savings',
+      description: goal ? `Tabungan ${goalName}` : (notes || 'Tabungan Bebas'),
+      amount,
+      transaction_date: transactionDate,
+      notes: notes || null,
+    });
+
+    // 3. Record savings transaction entry with matching ID
     if (typeof window !== 'undefined') {
       const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
       allST.push({
-        id: 'stx-' + Math.random().toString(36).substr(2, 9),
+        id: txId,
         user_id: userId,
         savings_goal_id: savingsGoalId || null,
         amount,
