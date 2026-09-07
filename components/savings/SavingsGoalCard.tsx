@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Target, PlusCircle, Edit3, Trash2, CheckCircle2, Calendar } from 'lucide-react';
+import { Target, PlusCircle, Edit3, Trash2, CheckCircle2, Calendar, History } from 'lucide-react';
 import { SavingsGoal } from '@/lib/types';
 import { formatRupiah, formatTanggal } from '@/lib/utils/format';
 
@@ -10,6 +10,7 @@ interface SavingsGoalCardProps {
   onAddDeposit: (goal: SavingsGoal) => void;
   onEdit: (goal: SavingsGoal) => void;
   onDelete: (id: string) => void;
+  onShowHistory: (goal: SavingsGoal) => void;
 }
 
 export function SavingsGoalCard({
@@ -17,6 +18,7 @@ export function SavingsGoalCard({
   onAddDeposit,
   onEdit,
   onDelete,
+  onShowHistory,
 }: SavingsGoalCardProps) {
   const percent = Math.min(
     100,
@@ -49,6 +51,13 @@ export function SavingsGoalCard({
           </div>
 
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => onShowHistory(goal)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+              title="Riwayat Setoran"
+            >
+              <History className="w-4 h-4" />
+            </button>
             <button
               onClick={() => onEdit(goal)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 transition-all"

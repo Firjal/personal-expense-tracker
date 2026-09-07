@@ -5,6 +5,7 @@ import { Plus, PiggyBank, Target } from 'lucide-react';
 import { SavingsGoalCard } from '@/components/savings/SavingsGoalCard';
 import { SavingsGoalModal } from '@/components/savings/SavingsGoalModal';
 import { AddSavingsFundModal } from '@/components/savings/AddSavingsFundModal';
+import { SavingsHistoryModal } from '@/components/savings/SavingsHistoryModal';
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
 import {
   fetchSavingsGoals,
@@ -28,6 +29,9 @@ export default function SavingsPage() {
 
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositGoal, setDepositGoal] = useState<SavingsGoal | null>(null);
+
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyGoal, setHistoryGoal] = useState<SavingsGoal | null>(null);
 
   const loadGoals = useCallback(async () => {
     if (!isReady) return;
@@ -94,6 +98,11 @@ export default function SavingsPage() {
   const openDeposit = (goal: SavingsGoal) => {
     setDepositGoal(goal);
     setIsDepositModalOpen(true);
+  };
+
+  const openHistory = (goal: SavingsGoal) => {
+    setHistoryGoal(goal);
+    setIsHistoryModalOpen(true);
   };
 
   const totalSavedAllGoals = goals.reduce((sum, g) => sum + Number(g.current_amount), 0);
@@ -176,6 +185,7 @@ export default function SavingsPage() {
               onAddDeposit={openDeposit}
               onEdit={openEditGoal}
               onDelete={handleDeleteGoal}
+              onShowHistory={openHistory}
             />
           ))}
         </div>
@@ -195,6 +205,13 @@ export default function SavingsPage() {
         onClose={() => setIsDepositModalOpen(false)}
         goal={depositGoal}
         onSubmit={handleAddDeposit}
+      />
+
+      {/* History Modal */}
+      <SavingsHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        goal={historyGoal}
       />
     </div>
   );

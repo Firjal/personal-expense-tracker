@@ -1,6 +1,6 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
-import { SavingsGoal, Transaction } from '@/lib/types';
+import { SavingsGoal, SavingsTransaction, Transaction } from '@/lib/types';
 import { createTransaction } from '@/lib/actions/transactions';
 
 export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> {
@@ -129,6 +129,31 @@ export async function deleteSavingsGoal(
   return { success: true };
 }
 
+export async function fetchSavingsHistory(
+  userId: string,
+  savingsGoalId: string
+): Promise<SavingsTransaction[]> {
+  if (!isSupabaseConfigured()) {
+    // Demo mode: return empty history
+    return [];
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('savings_transactions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('savings_goal_id', savingsGoalId)
+    .order('transaction_date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching savings history:', error);
+    return [];
+  }
+
+  return data as SavingsTransaction[];
+}
+
 export async function addSavingsDeposit(
   userId: string,
   savingsGoalId: string,
@@ -160,6 +185,15 @@ export async function addSavingsDeposit(
 
   if (goalErr || !goal) {
     return { success: false, error: 'Target tabungan tidak ditemukan.' };
+  }
+
+  // Validate: deposit must not exceed remaining target
+  const remaining = Number(goal.target_amount) - Number(goal.current_amount);
+  if (amount > remaining) {
+    return {
+      success: false,
+      error: `Setoran melebihi sisa target. Maksimal yang bisa ditabung: Rp${remaining.toLocaleString('id-ID')}.`,
+    };
   }
 
   // 2. Find or create savings category

@@ -136,11 +136,13 @@ export function TransactionFormModal({
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Tipe Transaksi
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid ${initialData?.type === 'savings' ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
               {[
                 { label: 'Pengeluaran', value: 'expense', color: 'peer-checked:bg-rose-500/20 peer-checked:text-rose-400 peer-checked:border-rose-500/40' },
                 { label: 'Pemasukan', value: 'income', color: 'peer-checked:bg-emerald-500/20 peer-checked:text-emerald-400 peer-checked:border-emerald-500/40' },
-                { label: 'Tabungan', value: 'savings', color: 'peer-checked:bg-sky-500/20 peer-checked:text-sky-400 peer-checked:border-sky-500/40' },
+                ...(initialData?.type === 'savings'
+                  ? [{ label: 'Tabungan (Data Lama)', value: 'savings', color: 'peer-checked:bg-sky-500/20 peer-checked:text-sky-400 peer-checked:border-sky-500/40' }]
+                  : []),
               ].map(t => (
                 <label key={t.value} className="cursor-pointer">
                   <input
