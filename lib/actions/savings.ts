@@ -196,21 +196,12 @@ export async function addSavingsDeposit(
     };
   }
 
-  // 2. Find or create savings category
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('type', 'savings');
-
-  const savingsCategoryId = categories && categories.length > 0 ? categories[0].id : null;
-
-  // 3. Create transaction record of type 'savings'
+  // 2. Create transaction record of type 'savings' (no category needed)
   const txRes = await createTransaction(userId, {
     description: `Tabungan ${goal.name}`,
     amount: Number(amount),
     type: 'savings',
-    category_id: savingsCategoryId || '',
+    category_id: null,
     transaction_date: transactionDate,
     notes: notes || `Menabung untuk target ${goal.name}`,
   });

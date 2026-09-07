@@ -88,7 +88,7 @@ export const DemoStore = {
 
   // Categories CRUD
   getCategories(userId: string): Category[] {
-    return this.ensureDefaultCategories(userId);
+    return this.ensureDefaultCategories(userId).filter(c => c.type !== 'savings');
   },
 
   addCategory(userId: string, name: string, type: 'expense' | 'income' | 'savings'): Category {
@@ -279,19 +279,9 @@ export const DemoStore = {
       }
     }
 
-    // 2. Ensure a savings category exists
-    const categories = this.getCategories(userId);
-    let savingsCat = categories.find(c => c.type === 'savings' && c.name.toLowerCase().includes(goalName.toLowerCase()));
-    if (!savingsCat) {
-      savingsCat = categories.find(c => c.type === 'savings');
-    }
-    if (!savingsCat) {
-      savingsCat = this.addCategory(userId, `Tabungan ${goalName}`, 'savings');
-    }
-
-    // 3. Insert transaction of type 'savings'
+    // 2. Insert transaction of type 'savings' (no category needed)
     const newTx = this.addTransaction(userId, {
-      category_id: savingsCat ? savingsCat.id : null,
+      category_id: null,
       type: 'savings',
       description: `Tabungan ${goalName}`,
       amount,

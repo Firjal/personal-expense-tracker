@@ -97,11 +97,14 @@ export function TransactionList({
               <option value="all" className="bg-slate-900 text-slate-200">
                 Semua Tipe
               </option>
+              <option value="expense" className="bg-slate-900 text-slate-200">
+                Pengeluaran
+              </option>
               <option value="income" className="bg-slate-900 text-slate-200">
                 Pemasukan
               </option>
-              <option value="expense" className="bg-slate-900 text-slate-200">
-                Pengeluaran
+              <option value="savings" className="bg-slate-900 text-slate-200">
+                Tabungan
               </option>
             </select>
           </div>
@@ -115,11 +118,13 @@ export function TransactionList({
               <option value="" className="bg-slate-900 text-slate-200">
                 Semua Kategori
               </option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id} className="bg-slate-900 text-slate-200">
-                  {c.name} ({c.type === 'expense' ? 'Pengeluaran' : c.type === 'income' ? 'Pemasukan' : 'Tabungan'})
-                </option>
-              ))}
+              {categories
+                .filter(c => c.type !== 'savings')
+                .map(c => (
+                  <option key={c.id} value={c.id} className="bg-slate-900 text-slate-200">
+                    {c.name} ({c.type === 'expense' ? 'Pengeluaran' : 'Pemasukan'})
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -168,9 +173,11 @@ export function TransactionList({
                         <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md font-bold border ${badge.bg}`}>
                           {badge.label}
                         </span>
-                        <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700/50">
-                          {tx.categories?.name || 'Lainnya'}
-                        </span>
+                        {tx.type !== 'savings' && (
+                          <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700/50">
+                            {tx.categories?.name || 'Lainnya'}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-slate-400">

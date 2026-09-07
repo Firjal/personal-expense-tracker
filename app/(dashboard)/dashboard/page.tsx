@@ -82,7 +82,7 @@ export default function DashboardPage() {
     description: string;
     amount: number;
     type: TransactionType;
-    category_id: string;
+    category_id?: string | null;
     transaction_date: string;
     notes?: string;
   }) => {

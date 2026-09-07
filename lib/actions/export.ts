@@ -8,7 +8,7 @@ export function exportTransactionsToCSV(transactions: Transaction[]): string {
     const tanggal = formatTanggal(t.transaction_date, 'full');
     const tipe = t.type === 'expense' ? 'Pengeluaran' : t.type === 'income' ? 'Pemasukan' : 'Tabungan';
     const keterangan = `"${(t.description || '').replace(/"/g, '""')}"`;
-    const kategori = `"${(t.categories?.name || 'Tanpa Kategori').replace(/"/g, '""')}"`;
+    const kategori = t.type === 'savings' ? '""' : `"${(t.categories?.name || 'Tanpa Kategori').replace(/"/g, '""')}"`;
     const nominal = t.amount;
     const catatan = `"${(t.notes || '').replace(/"/g, '""')}"`;
 
