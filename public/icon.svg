@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="jallBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+  </defs>
+  <!-- Background Squircle -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#jallBg)" />
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="#818CF8" stroke-width="6" stroke-opacity="0.3" />
+  
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Wallet body outline -->
+    <path d="M120 180 C120 144 148 116 184 116 L356 116 C384 116 404 136 404 164 L404 348 C404 376 384 396 356 396 L168 396 C140 396 120 376 120 348 Z" stroke-width="36" />
+    <!-- Flap seam line -->
+    <path d="M120 204 L404 204" stroke-width="32" stroke-opacity="0.6" />
+    <!-- Clasp pocket -->
+    <rect x="280" y="240" width="124" height="88" rx="28" fill="#312E81" stroke="#FFFFFF" stroke-width="32" />
+    <circle cx="342" cy="284" r="16" fill="#38BDF8" stroke="none" />
+  </g>
+</svg>

@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   applicationName: 'JallTracker',
   description:
     'Aplikasi pencatat pengeluaran, pemasukan, dan target tabungan pribadi yang aman, modern, dan scalable.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({
