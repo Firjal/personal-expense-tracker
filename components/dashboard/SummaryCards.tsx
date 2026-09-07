@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, PiggyBank, Wallet } from 'lucide-react';
 import { MonthlyFinancialSummary } from '@/lib/types';
 import { formatRupiah } from '@/lib/utils/format';
 
@@ -13,8 +13,8 @@ interface SummaryCardsProps {
 export function SummaryCards({ summary, isLoading }: SummaryCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[1, 2, 3].map(i => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
           <div
             key={i}
             className="h-32 bg-slate-900/60 border border-slate-800 rounded-2xl p-5 animate-pulse flex flex-col justify-between"
@@ -46,6 +46,14 @@ export function SummaryCards({ summary, isLoading }: SummaryCardsProps) {
       gradient: 'from-rose-500/10 via-slate-900 to-slate-900',
     },
     {
+      title: 'Total Tabungan',
+      amount: summary.totalSavings,
+      icon: PiggyBank,
+      colorClass: 'text-sky-400',
+      bgClass: 'bg-sky-500/10 border-sky-500/20',
+      gradient: 'from-sky-500/10 via-slate-900 to-slate-900',
+    },
+    {
       title: 'Sisa Uang',
       amount: summary.balance,
       icon: Wallet,
@@ -57,7 +65,7 @@ export function SummaryCards({ summary, isLoading }: SummaryCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card, idx) => {
         const Icon = card.icon;
         return (
@@ -80,7 +88,7 @@ export function SummaryCards({ summary, isLoading }: SummaryCardsProps) {
               </h3>
               {card.isBalance ? (
                 <p className="text-xs text-slate-400 font-medium">
-                  Pemasukan − Pengeluaran
+                  Pemasukan − Pengeluaran − Tabungan
                 </p>
               ) : (
                 <p className="text-xs text-slate-500">

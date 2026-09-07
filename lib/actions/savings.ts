@@ -24,17 +24,29 @@ export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> 
 }
 
 // ─── Total savings = sum of ALL savings_transactions for the user ─────────────
-// This is independent of goals. Deleting a goal does NOT reduce this total.
-export async function fetchTotalSavings(userId: string): Promise<number> {
+// Can be all-time (default) or filtered by month and year.
+export async function fetchTotalSavings(
+  userId: string,
+  filter?: { month?: number; year?: number }
+): Promise<number> {
   if (!isSupabaseConfigured()) {
-    return DemoStore.getTotalSavings(userId);
+    return DemoStore.getTotalSavings(userId, filter);
   }
 
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('savings_transactions')
     .select('amount')
     .eq('user_id', userId);
+
+  if (filter?.month && filter?.year) {
+    const startOfMonth = `${filter.year}-${String(filter.month).padStart(2, '0')}-01`;
+    const lastDay = new Date(filter.year, filter.month, 0).getDate();
+    const endOfMonth = `${filter.year}-${String(filter.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    query = query.gte('transaction_date', startOfMonth).lte('transaction_date', endOfMonth);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching total savings:', error);

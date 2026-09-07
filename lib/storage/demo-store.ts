@@ -263,12 +263,20 @@ export const DemoStore = {
     return true;
   },
 
-  // Total savings = sum of all savings_transactions for user
-  getTotalSavings(userId: string): number {
+  // Total savings = sum of all savings_transactions for user (optionally filtered by month and year)
+  getTotalSavings(userId: string, filter?: { month?: number; year?: number }): number {
     if (typeof window === 'undefined') return 0;
     const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
     return allST
-      .filter(st => st.user_id === userId)
+      .filter(st => {
+        if (st.user_id !== userId) return false;
+        if (filter?.month && filter?.year) {
+          const dStr = st.transaction_date.substring(0, 10);
+          const [y, m] = dStr.split('-').map(Number);
+          return y === filter.year && m === filter.month;
+        }
+        return true;
+      })
       .reduce((sum, st) => sum + Number(st.amount), 0);
   },
 

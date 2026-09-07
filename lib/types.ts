@@ -67,7 +67,8 @@ export interface SavingsTransaction {
 export interface MonthlyFinancialSummary {
   totalIncome: number;
   totalExpense: number;
-  balance: number; // Sisa = Total Income - Total Expense
+  totalSavings: number;
+  balance: number; // Sisa = Total Income - Total Expense - Total Savings
   transactionCount: number;
   largestExpense?: { description: string; amount: number; categoryName: string } | null;
   largestIncome?: { description: string; amount: number; categoryName: string } | null;

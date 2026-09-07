@@ -2,6 +2,7 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
 import { Transaction, TransactionType, MonthlyFinancialSummary } from '@/lib/types';
 import { getMonthDateRange } from '@/lib/utils/format';
+import { fetchTotalSavings } from './savings';
 
 export interface TransactionFilterOptions {
   month?: number;
@@ -243,6 +244,7 @@ export async function getMonthlySummary(
 
   let totalIncome = 0;
   let totalExpense = 0;
+  let legacySavings = 0;
 
   let largestExpense: { description: string; amount: number; categoryName: string } | null = null;
   let largestIncome: { description: string; amount: number; categoryName: string } | null = null;
@@ -268,6 +270,8 @@ export async function getMonthlySummary(
         categoryTotals[catName] = { name: catName, amount: 0 };
       }
       categoryTotals[catName].amount += amt;
+    } else if (t.type === 'savings') {
+      legacySavings += amt;
     }
   });
 
@@ -279,12 +283,17 @@ export async function getMonthlySummary(
     }
   });
 
-  // Balance = Total Income - Total Expense (savings is managed separately)
-  const balance = totalIncome - totalExpense;
+  // Calculate total savings from the savings system for this month (+ legacy savings if any)
+  const savingsFromSystem = await fetchTotalSavings(userId, { month, year });
+  const totalSavings = savingsFromSystem + legacySavings;
+
+  // Formula: Sisa Uang = Total Pemasukan - Total Pengeluaran - Total Uang Tabungan
+  const balance = totalIncome - totalExpense - totalSavings;
 
   return {
     totalIncome,
     totalExpense,
+    totalSavings,
     balance,
     transactionCount: transactions.length,
     largestExpense,

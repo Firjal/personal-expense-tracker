@@ -21,6 +21,7 @@ export default function ReportsPage() {
   const [summary, setSummary] = useState<MonthlyFinancialSummary>({
     totalIncome: 0,
     totalExpense: 0,
+    totalSavings: 0,
     balance: 0,
     transactionCount: 0,
   });
