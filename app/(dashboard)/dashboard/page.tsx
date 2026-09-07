@@ -29,7 +29,6 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<MonthlyFinancialSummary>({
     totalIncome: 0,
     totalExpense: 0,
-    totalSavings: 0,
     balance: 0,
     transactionCount: 0,
   });
@@ -49,16 +48,13 @@ export default function DashboardPage() {
 
   const handleTypeChange = (type: TransactionType | 'all') => {
     setSelectedType(type);
-    if (type === 'savings') {
-      setSelectedCategory('');
-    }
   };
 
   const loadData = useCallback(async () => {
     if (!isReady) return;
     setIsLoading(true);
 
-    const activeCategoryId = selectedType === 'savings' ? undefined : (selectedCategory || undefined);
+    const activeCategoryId = selectedCategory || undefined;
 
     const [sumData, txData, catData] = await Promise.all([
       getMonthlySummary(userId, currentMonth, currentYear),

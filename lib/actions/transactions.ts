@@ -243,7 +243,6 @@ export async function getMonthlySummary(
 
   let totalIncome = 0;
   let totalExpense = 0;
-  let totalSavings = 0;
 
   let largestExpense: { description: string; amount: number; categoryName: string } | null = null;
   let largestIncome: { description: string; amount: number; categoryName: string } | null = null;
@@ -269,8 +268,6 @@ export async function getMonthlySummary(
         categoryTotals[catName] = { name: catName, amount: 0 };
       }
       categoryTotals[catName].amount += amt;
-    } else if (t.type === 'savings') {
-      totalSavings += amt;
     }
   });
 
@@ -282,13 +279,12 @@ export async function getMonthlySummary(
     }
   });
 
-  // Strict Formula Requirement: Sisa = Total Income - Total Expense - Total Savings
-  const balance = totalIncome - totalExpense - totalSavings;
+  // Balance = Total Income - Total Expense (savings is managed separately)
+  const balance = totalIncome - totalExpense;
 
   return {
     totalIncome,
     totalExpense,
-    totalSavings,
     balance,
     transactionCount: transactions.length,
     largestExpense,
@@ -296,3 +292,4 @@ export async function getMonthlySummary(
     topExpenseCategory,
   };
 }
+

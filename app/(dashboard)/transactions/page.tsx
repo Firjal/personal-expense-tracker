@@ -38,16 +38,13 @@ export default function TransactionsPage() {
 
   const handleTypeChange = (type: TransactionType | 'all') => {
     setSelectedType(type);
-    if (type === 'savings') {
-      setSelectedCategory('');
-    }
   };
 
   const loadData = useCallback(async () => {
     if (!isReady) return;
     setIsLoading(true);
 
-    const activeCategoryId = selectedType === 'savings' ? undefined : (selectedCategory || undefined);
+    const activeCategoryId = selectedCategory || undefined;
 
     const [txData, catData] = await Promise.all([
       fetchTransactions(userId, {

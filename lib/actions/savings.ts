@@ -1,8 +1,8 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
-import { SavingsGoal, SavingsTransaction, Transaction } from '@/lib/types';
-import { createTransaction } from '@/lib/actions/transactions';
+import { SavingsGoal, SavingsTransaction } from '@/lib/types';
 
+// ─── Fetch all savings goals for a user ──────────────────────────────────────
 export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> {
   if (!isSupabaseConfigured()) {
     return DemoStore.getSavingsGoals(userId);
@@ -23,20 +23,18 @@ export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> 
   return data as SavingsGoal[];
 }
 
+// ─── Total savings = sum of ALL savings_transactions for the user ─────────────
+// This is independent of goals. Deleting a goal does NOT reduce this total.
 export async function fetchTotalSavings(userId: string): Promise<number> {
   if (!isSupabaseConfigured()) {
-    const txs = DemoStore.getTransactions(userId);
-    return txs
-      .filter(t => t.type === 'savings')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+    return DemoStore.getTotalSavings(userId);
   }
 
   const supabase = createClient();
   const { data, error } = await supabase
-    .from('transactions')
+    .from('savings_transactions')
     .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'savings');
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Error fetching total savings:', error);
@@ -46,6 +44,7 @@ export async function fetchTotalSavings(userId: string): Promise<number> {
   return (data || []).reduce((sum, t) => sum + Number(t.amount), 0);
 }
 
+// ─── Create a new savings goal ────────────────────────────────────────────────
 export async function createSavingsGoal(
   userId: string,
   data: {
@@ -86,6 +85,7 @@ export async function createSavingsGoal(
   return { success: true, goal: created as SavingsGoal };
 }
 
+// ─── Update an existing savings goal ─────────────────────────────────────────
 export async function updateSavingsGoal(
   userId: string,
   id: string,
@@ -129,6 +129,9 @@ export async function updateSavingsGoal(
   return { success: true, goal: updated as SavingsGoal };
 }
 
+// ─── Delete a savings goal ────────────────────────────────────────────────────
+// The related savings_transactions will have savings_goal_id SET NULL (not deleted).
+// This ensures the user's savings balance is preserved.
 export async function deleteSavingsGoal(
   userId: string,
   id: string
@@ -152,21 +155,27 @@ export async function deleteSavingsGoal(
   return { success: true };
 }
 
+// ─── Fetch savings history for a specific goal or all deposits ───────────────
 export async function fetchSavingsHistory(
   userId: string,
-  savingsGoalId: string
+  savingsGoalId?: string | null
 ): Promise<SavingsTransaction[]> {
   if (!isSupabaseConfigured()) {
     return DemoStore.getSavingsHistory(userId, savingsGoalId);
   }
 
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('savings_transactions')
-    .select('*')
+    .select('*, savings_goals(name)')
     .eq('user_id', userId)
-    .eq('savings_goal_id', savingsGoalId)
     .order('transaction_date', { ascending: false });
+
+  if (savingsGoalId) {
+    query = query.eq('savings_goal_id', savingsGoalId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching savings history:', error);
@@ -176,13 +185,16 @@ export async function fetchSavingsHistory(
   return data as SavingsTransaction[];
 }
 
+// ─── Add a deposit to savings ─────────────────────────────────────────────────
+// Records only in savings_transactions (NOT in the transactions table anymore).
+// savingsGoalId can be a goal ID or null (general/unallocated savings).
 export async function addSavingsDeposit(
   userId: string,
-  savingsGoalId: string,
+  savingsGoalId: string | null,
   amount: number,
   transactionDate: string,
   notes?: string
-): Promise<{ success: boolean; goal?: SavingsGoal; transaction?: Transaction; error?: string }> {
+): Promise<{ success: boolean; goal?: SavingsGoal; error?: string }> {
   if (!amount || isNaN(amount) || amount <= 0) {
     return { success: false, error: 'Nominal setoran tabungan harus lebih besar dari 0.' };
   }
@@ -192,74 +204,63 @@ export async function addSavingsDeposit(
 
   if (!isSupabaseConfigured()) {
     const res = DemoStore.addSavingsDeposit(userId, savingsGoalId, Number(amount), transactionDate, notes);
-    return { success: true, goal: res.goal || undefined, transaction: res.transaction };
+    return { success: true, goal: res.goal || undefined };
   }
 
   const supabase = createClient();
 
-  // 1. Fetch savings goal details
-  const { data: goal, error: goalErr } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .eq('id', savingsGoalId)
-    .eq('user_id', userId)
-    .single();
+  // If linked to a target, fetch the goal first
+  let targetGoal: SavingsGoal | null = null;
+  if (savingsGoalId) {
+    const { data: goal, error: goalErr } = await supabase
+      .from('savings_goals')
+      .select('*')
+      .eq('id', savingsGoalId)
+      .eq('user_id', userId)
+      .single();
 
-  if (goalErr || !goal) {
-    return { success: false, error: 'Target tabungan tidak ditemukan.' };
+    if (goalErr || !goal) {
+      return { success: false, error: 'Target tabungan tidak ditemukan.' };
+    }
+    targetGoal = goal as SavingsGoal;
   }
 
-  // Validate: deposit must not exceed remaining target
-  const remaining = Number(goal.target_amount) - Number(goal.current_amount);
-  if (amount > remaining) {
-    return {
-      success: false,
-      error: `Setoran melebihi sisa target. Maksimal yang bisa ditabung: Rp${remaining.toLocaleString('id-ID')}.`,
-    };
-  }
-
-  // 2. Create transaction record of type 'savings' (no category needed)
-  const txRes = await createTransaction(userId, {
-    description: `Tabungan ${goal.name}`,
-    amount: Number(amount),
-    type: 'savings',
-    category_id: null,
-    transaction_date: transactionDate,
-    notes: notes || `Menabung untuk target ${goal.name}`,
-  });
-
-  if (!txRes.success) {
-    return { success: false, error: txRes.error };
-  }
-
-  // 4. Record savings transaction entry
-  await supabase.from('savings_transactions').insert({
+  // Insert into savings_transactions (source of truth for savings balance)
+  const { error: stErr } = await supabase.from('savings_transactions').insert({
     user_id: userId,
-    savings_goal_id: savingsGoalId,
+    savings_goal_id: savingsGoalId || null,
     amount: Number(amount),
     transaction_date: transactionDate,
     notes: notes || null,
   });
 
-  // 5. Update savings goal current_amount
-  const newCurrentAmount = Number(goal.current_amount) + Number(amount);
-  const { data: updatedGoal, error: updateErr } = await supabase
-    .from('savings_goals')
-    .update({
-      current_amount: newCurrentAmount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', savingsGoalId)
-    .select()
-    .single();
+  if (stErr) {
+    return { success: false, error: stErr.message };
+  }
 
-  if (updateErr) {
-    return { success: false, error: updateErr.message };
+  // If linked to a target, update savings goal current_amount
+  let updatedGoal: SavingsGoal | undefined = undefined;
+  if (targetGoal && savingsGoalId) {
+    const newCurrentAmount = Number(targetGoal.current_amount) + Number(amount);
+    const { data: updated, error: updateErr } = await supabase
+      .from('savings_goals')
+      .update({
+        current_amount: newCurrentAmount,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', savingsGoalId)
+      .select()
+      .single();
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+    updatedGoal = updated as SavingsGoal;
   }
 
   return {
     success: true,
-    goal: updatedGoal as SavingsGoal,
-    transaction: txRes.transaction,
+    goal: updatedGoal,
   };
 }
+

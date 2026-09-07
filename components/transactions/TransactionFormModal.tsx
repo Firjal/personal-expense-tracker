@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, Save, AlertCircle } from 'lucide-react';
-import { Category, Transaction, TransactionType } from '@/lib/types';
+import { Category, Transaction, ActiveTransactionType, TransactionType } from '@/lib/types';
 import { formatRupiah } from '@/lib/utils/format';
 
 interface TransactionFormModalProps {
@@ -27,7 +27,7 @@ export function TransactionFormModal({
   categories,
   initialData,
 }: TransactionFormModalProps) {
-  const [type, setType] = useState<TransactionType>('expense');
+  const [type, setType] = useState<ActiveTransactionType>('expense');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -40,7 +40,7 @@ export function TransactionFormModal({
 
   useEffect(() => {
     if (initialData) {
-      setType(initialData.type);
+      setType(initialData.type === 'income' ? 'income' : 'expense');
       setDescription(initialData.description);
       setAmount(String(initialData.amount));
       setCategoryId(initialData.category_id || '');
@@ -57,12 +57,14 @@ export function TransactionFormModal({
     setErrorMsg('');
   }, [initialData, isOpen]);
 
-  // Filter categories by chosen transaction type
-  const filteredCategories = categories.filter(c => c.type === type);
+  // Filter categories by chosen transaction type (expense or income only)
+  const filteredCategories = categories.filter(
+    c => c.type === type && !c.name.toLowerCase().includes('tabungan')
+  );
 
-  // Auto-select first category if none selected and not savings
+  // Auto-select first category if none selected
   useEffect(() => {
-    if (type !== 'savings' && !categoryId && filteredCategories.length > 0) {
+    if (!categoryId && filteredCategories.length > 0) {
       setCategoryId(filteredCategories[0].id);
     }
   }, [type, filteredCategories, categoryId]);
@@ -83,7 +85,7 @@ export function TransactionFormModal({
       setErrorMsg('Nominal transaksi harus lebih besar dari Rp0.');
       return;
     }
-    if (type !== 'savings' && !categoryId) {
+    if (!categoryId) {
       setErrorMsg('Kategori transaksi wajib dipilih.');
       return;
     }
@@ -97,7 +99,7 @@ export function TransactionFormModal({
       description: description.trim(),
       amount: numAmount,
       type,
-      category_id: type === 'savings' ? null : categoryId,
+      category_id: categoryId,
       transaction_date: transactionDate,
       notes: notes.trim() || undefined,
     });
@@ -121,7 +123,7 @@ export function TransactionFormModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-all"
+            className="p-1.5 text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -135,16 +137,15 @@ export function TransactionFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tipe Transaksi */}
+          {/* Tipe Transaksi: Pengeluaran & Pemasukan saja */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Tipe Transaksi
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Pengeluaran', value: 'expense', color: 'peer-checked:bg-rose-500/20 peer-checked:text-rose-400 peer-checked:border-rose-500/40' },
-                { label: 'Pemasukan', value: 'income', color: 'peer-checked:bg-emerald-500/20 peer-checked:text-emerald-400 peer-checked:border-emerald-500/40' },
-                { label: 'Tabungan', value: 'savings', color: 'peer-checked:bg-sky-500/20 peer-checked:text-sky-400 peer-checked:border-sky-500/40' },
+                { label: 'Pengeluaran', value: 'expense' as const, color: 'peer-checked:bg-rose-500/20 peer-checked:text-rose-400 peer-checked:border-rose-500/40' },
+                { label: 'Pemasukan', value: 'income' as const, color: 'peer-checked:bg-emerald-500/20 peer-checked:text-emerald-400 peer-checked:border-emerald-500/40' },
               ].map(t => (
                 <label key={t.value} className="cursor-pointer">
                   <input
@@ -153,18 +154,13 @@ export function TransactionFormModal({
                     value={t.value}
                     checked={type === t.value}
                     onChange={() => {
-                      const newType = t.value as TransactionType;
-                      setType(newType);
-                      if (newType === 'savings') {
-                        setCategoryId('');
-                      } else {
-                        const firstCat = categories.find(c => c.type === newType);
-                        setCategoryId(firstCat ? firstCat.id : '');
-                      }
+                      setType(t.value);
+                      const firstCat = categories.find(c => c.type === t.value);
+                      setCategoryId(firstCat ? firstCat.id : '');
                     }}
                     className="peer sr-only"
                   />
-                  <div className={`py-2 px-2 sm:px-3 text-center rounded-xl border border-slate-800 bg-slate-950/60 text-slate-400 text-xs sm:text-sm font-semibold transition-all hover:bg-slate-800 ${t.color}`}>
+                  <div className={`py-2.5 px-3 text-center rounded-xl border border-slate-800 bg-slate-950/60 text-slate-400 text-sm font-semibold transition-all hover:bg-slate-800 ${t.color}`}>
                     {t.label}
                   </div>
                 </label>
@@ -179,7 +175,7 @@ export function TransactionFormModal({
             </label>
             <input
               type="text"
-              placeholder="Contoh: Nasi Padang, Uang Bulanan"
+              placeholder="Contoh: Makan Siang, Gaji Bulanan"
               value={description}
               onChange={e => setDescription(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
@@ -188,10 +184,10 @@ export function TransactionFormModal({
           </div>
 
           {/* Nominal & Kategori */}
-          {type === 'savings' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Nominal Tabungan (Rp) <span className="text-rose-400">*</span>
+                Nominal (Rp) <span className="text-rose-400">*</span>
               </label>
               <input
                 type="number"
@@ -209,52 +205,29 @@ export function TransactionFormModal({
                 </p>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Nominal (Rp) <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  min="1"
-                  step="any"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all font-semibold"
-                  required
-                />
-                {amount && !isNaN(parseFloat(amount)) && (
-                  <p className="text-xs text-indigo-400 mt-1 font-medium">
-                    = {formatRupiah(parseFloat(amount))}
-                  </p>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Kategori <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  value={categoryId}
-                  onChange={e => setCategoryId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all cursor-pointer"
-                  required
-                >
-                  {filteredCategories.length === 0 ? (
-                    <option value="">Lainnya</option>
-                  ) : (
-                    filteredCategories.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Kategori <span className="text-rose-400">*</span>
+              </label>
+              <select
+                value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all cursor-pointer"
+                required
+              >
+                {filteredCategories.length === 0 ? (
+                  <option value="">Lainnya</option>
+                ) : (
+                  filteredCategories.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
-          )}
+          </div>
 
           {/* Tanggal */}
           <div>
@@ -289,14 +262,14 @@ export function TransactionFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 text-sm font-semibold transition-all hover:bg-slate-800"
+              className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 text-sm font-semibold transition-all hover:bg-slate-800 cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}

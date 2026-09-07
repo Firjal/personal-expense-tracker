@@ -248,23 +248,41 @@ export const DemoStore = {
     const all: SavingsGoal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS) || '[]');
     const filtered = all.filter(g => !(g.id === id && g.user_id === userId));
     localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(filtered));
+
+    // ON DELETE SET NULL: Disassociate savings transactions instead of deleting them
+    // This preserves user's total savings even when target is deleted
+    const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
+    const updatedST = allST.map(st => {
+      if (st.user_id === userId && st.savings_goal_id === id) {
+        return { ...st, savings_goal_id: null };
+      }
+      return st;
+    });
+    localStorage.setItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS, JSON.stringify(updatedST));
+
     return true;
+  },
+
+  // Total savings = sum of all savings_transactions for user
+  getTotalSavings(userId: string): number {
+    if (typeof window === 'undefined') return 0;
+    const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
+    return allST
+      .filter(st => st.user_id === userId)
+      .reduce((sum, st) => sum + Number(st.amount), 0);
   },
 
   addSavingsDeposit(
     userId: string,
-    savingsGoalId: string,
+    savingsGoalId: string | null,
     amount: number,
     transactionDate: string,
     notes?: string
-  ): { goal: SavingsGoal | null; transaction: Transaction } {
-    const goals = this.getSavingsGoals(userId);
-    const goal = goals.find(g => g.id === savingsGoalId);
-    const goalName = goal ? goal.name : 'Tabungan';
-
-    // 1. Update Savings Goal current_amount
+  ): { goal: SavingsGoal | null } {
     let updatedGoal: SavingsGoal | null = null;
-    if (typeof window !== 'undefined') {
+
+    // 1. If linked to a goal, update Savings Goal current_amount
+    if (savingsGoalId && typeof window !== 'undefined') {
       const allGoals: SavingsGoal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS) || '[]');
       const gIndex = allGoals.findIndex(g => g.id === savingsGoalId && g.user_id === userId);
       if (gIndex !== -1) {
@@ -275,23 +293,13 @@ export const DemoStore = {
       }
     }
 
-    // 2. Insert transaction of type 'savings' (no category needed)
-    const newTx = this.addTransaction(userId, {
-      category_id: null,
-      type: 'savings',
-      description: `Tabungan ${goalName}`,
-      amount,
-      transaction_date: transactionDate,
-      notes: notes || `Menabung untuk target ${goalName}`,
-    });
-
-    // 4. Record savings transaction entry
+    // 2. Record savings transaction entry (separate from regular transactions table)
     if (typeof window !== 'undefined') {
       const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
       allST.push({
         id: 'stx-' + Math.random().toString(36).substr(2, 9),
         user_id: userId,
-        savings_goal_id: savingsGoalId,
+        savings_goal_id: savingsGoalId || null,
         amount,
         transaction_date: transactionDate,
         notes: notes || null,
@@ -300,14 +308,15 @@ export const DemoStore = {
       localStorage.setItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS, JSON.stringify(allST));
     }
 
-    return { goal: updatedGoal, transaction: newTx };
+    return { goal: updatedGoal };
   },
 
-  getSavingsHistory(userId: string, savingsGoalId: string): SavingsTransaction[] {
+  getSavingsHistory(userId: string, savingsGoalId?: string | null): SavingsTransaction[] {
     if (typeof window === 'undefined') return [];
     const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
     return allST
-      .filter(st => st.user_id === userId && st.savings_goal_id === savingsGoalId)
+      .filter(st => st.user_id === userId && (!savingsGoalId || st.savings_goal_id === savingsGoalId))
       .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
   },
 };
+

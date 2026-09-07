@@ -1,4 +1,7 @@
+// TransactionType still includes 'savings' for backward compat with legacy data in DB
+// New transactions can only be 'expense' | 'income' via the UI
 export type TransactionType = 'expense' | 'income' | 'savings';
+export type ActiveTransactionType = 'expense' | 'income';
 
 export interface Profile {
   id: string;
@@ -50,7 +53,7 @@ export interface SavingsGoal {
 export interface SavingsTransaction {
   id: string;
   user_id: string;
-  savings_goal_id: string;
+  savings_goal_id: string | null; // nullable: deposit can exist without a goal (goal was deleted)
   amount: number;
   transaction_date: string; // YYYY-MM-DD
   notes?: string | null;
@@ -64,8 +67,7 @@ export interface SavingsTransaction {
 export interface MonthlyFinancialSummary {
   totalIncome: number;
   totalExpense: number;
-  totalSavings: number;
-  balance: number; // Sisa = Total Income - Total Expense - Total Savings
+  balance: number; // Sisa = Total Income - Total Expense
   transactionCount: number;
   largestExpense?: { description: string; amount: number; categoryName: string } | null;
   largestIncome?: { description: string; amount: number; categoryName: string } | null;

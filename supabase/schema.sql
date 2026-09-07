@@ -50,10 +50,16 @@ CREATE TABLE IF NOT EXISTS public.savings_goals (
 );
 
 -- 5. Create SAVINGS TRANSACTIONS Table
+-- savings_goal_id is nullable: deposits can exist even after a goal is deleted (ON DELETE SET NULL)
+-- MIGRATION REQUIRED in Supabase SQL Editor for existing databases:
+--   ALTER TABLE public.savings_transactions ALTER COLUMN savings_goal_id DROP NOT NULL;
+--   ALTER TABLE public.savings_transactions DROP CONSTRAINT IF EXISTS savings_transactions_savings_goal_id_fkey;
+--   ALTER TABLE public.savings_transactions ADD CONSTRAINT savings_transactions_savings_goal_id_fkey
+--     FOREIGN KEY (savings_goal_id) REFERENCES public.savings_goals(id) ON DELETE SET NULL;
 CREATE TABLE IF NOT EXISTS public.savings_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  savings_goal_id UUID NOT NULL REFERENCES public.savings_goals(id) ON DELETE CASCADE,
+  savings_goal_id UUID REFERENCES public.savings_goals(id) ON DELETE SET NULL,
   amount NUMERIC(15, 2) NOT NULL CHECK (amount > 0),
   transaction_date DATE NOT NULL,
   notes TEXT,
