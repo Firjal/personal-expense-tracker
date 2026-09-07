@@ -109,24 +109,27 @@ export function TransactionList({
             </select>
           </div>
 
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2 py-1">
-            <select
-              value={selectedCategory}
-              onChange={e => onCategoryChange(e.target.value)}
-              className="bg-transparent text-slate-200 text-xs sm:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1"
-            >
-              <option value="" className="bg-slate-900 text-slate-200">
-                Semua Kategori
-              </option>
-              {categories
-                .filter(c => c.type !== 'savings')
-                .map(c => (
-                  <option key={c.id} value={c.id} className="bg-slate-900 text-slate-200">
-                    {c.name} ({c.type === 'expense' ? 'Pengeluaran' : 'Pemasukan'})
-                  </option>
-                ))}
-            </select>
-          </div>
+          {selectedType !== 'savings' && (
+            <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2 py-1">
+              <select
+                value={selectedCategory}
+                onChange={e => onCategoryChange(e.target.value)}
+                className="bg-transparent text-slate-200 text-xs sm:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1"
+              >
+                <option value="" className="bg-slate-900 text-slate-200">
+                  Semua Kategori
+                </option>
+                {categories
+                  .filter(c => c.type !== 'savings' && !c.name.toLowerCase().includes('tabungan'))
+                  .filter(c => selectedType === 'all' || c.type === selectedType)
+                  .map(c => (
+                    <option key={c.id} value={c.id} className="bg-slate-900 text-slate-200">
+                      {c.name} {selectedType === 'all' ? `(${c.type === 'expense' ? 'Pengeluaran' : 'Pemasukan'})` : ''}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 

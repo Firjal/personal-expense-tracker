@@ -36,16 +36,25 @@ export default function TransactionsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
+  const handleTypeChange = (type: TransactionType | 'all') => {
+    setSelectedType(type);
+    if (type === 'savings') {
+      setSelectedCategory('');
+    }
+  };
+
   const loadData = useCallback(async () => {
     if (!isReady) return;
     setIsLoading(true);
+
+    const activeCategoryId = selectedType === 'savings' ? undefined : (selectedCategory || undefined);
 
     const [txData, catData] = await Promise.all([
       fetchTransactions(userId, {
         month: currentMonth,
         year: currentYear,
         type: selectedType,
-        categoryId: selectedCategory || undefined,
+        categoryId: activeCategoryId,
         searchQuery: searchQuery || undefined,
       }),
       fetchCategories(userId),
@@ -144,7 +153,7 @@ export default function TransactionsPage() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedType={selectedType}
-        onTypeChange={setSelectedType}
+        onTypeChange={handleTypeChange}
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
       />

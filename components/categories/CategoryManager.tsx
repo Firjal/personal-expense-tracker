@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { PlusCircle, Tag, Edit3, Trash2, ShieldCheck, AlertCircle } from 'lucide-react';
-import { Category, TransactionType } from '@/lib/types';
+import { Category } from '@/lib/types';
 
 interface CategoryManagerProps {
   categories: Category[];
-  onCreate: (name: string, type: TransactionType) => Promise<{ success: boolean; error?: string }>;
+  onCreate: (name: string, type: 'expense' | 'income') => Promise<{ success: boolean; error?: string }>;
   onUpdate: (id: string, name: string) => Promise<{ success: boolean; error?: string }>;
   onDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
   isLoading?: boolean;
@@ -19,7 +19,7 @@ export function CategoryManager({
   onDelete,
   isLoading,
 }: CategoryManagerProps) {
-  const [activeTab, setActiveTab] = useState<TransactionType>('expense');
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [nameInput, setNameInput] = useState('');
@@ -103,7 +103,7 @@ export function CategoryManager({
             ].map(tab => (
               <button
                 key={tab.type}
-                onClick={() => setActiveTab(tab.type as TransactionType)}
+                onClick={() => setActiveTab(tab.type as 'expense' | 'income')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab.type
                     ? 'bg-indigo-600 text-white shadow-md'

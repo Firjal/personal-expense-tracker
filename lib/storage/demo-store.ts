@@ -26,12 +26,6 @@ const DEFAULT_CATEGORIES: Array<{ name: string; type: 'expense' | 'income' | 'sa
   { name: 'Bonus', type: 'income' },
   { name: 'Hadiah', type: 'income' },
   { name: 'Lainnya', type: 'income' },
-  // Tabungan
-  { name: 'Tabungan Umum', type: 'savings' },
-  { name: 'Tabungan Laptop', type: 'savings' },
-  { name: 'Tabungan Kendaraan', type: 'savings' },
-  { name: 'Tabungan Pendidikan', type: 'savings' },
-  { name: 'Lainnya', type: 'savings' },
 ];
 
 export const DemoStore = {
@@ -88,7 +82,9 @@ export const DemoStore = {
 
   // Categories CRUD
   getCategories(userId: string): Category[] {
-    return this.ensureDefaultCategories(userId).filter(c => c.type !== 'savings');
+    return this.ensureDefaultCategories(userId).filter(
+      c => c.type !== 'savings' && !c.name.toLowerCase().includes('tabungan')
+    );
   },
 
   addCategory(userId: string, name: string, type: 'expense' | 'income' | 'savings'): Category {
@@ -305,5 +301,13 @@ export const DemoStore = {
     }
 
     return { goal: updatedGoal, transaction: newTx };
+  },
+
+  getSavingsHistory(userId: string, savingsGoalId: string): SavingsTransaction[] {
+    if (typeof window === 'undefined') return [];
+    const allST: SavingsTransaction[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVINGS_TRANSACTIONS) || '[]');
+    return allST
+      .filter(st => st.user_id === userId && st.savings_goal_id === savingsGoalId)
+      .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
   },
 };

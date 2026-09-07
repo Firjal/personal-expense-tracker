@@ -9,7 +9,7 @@ import {
   deleteCategory,
 } from '@/lib/actions/categories';
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
-import { Category, TransactionType } from '@/lib/types';
+import { Category } from '@/lib/types';
 
 export default function CategoriesPage() {
   const { userId, isReady } = useCurrentUser();
@@ -28,7 +28,7 @@ export default function CategoriesPage() {
     loadCategories();
   }, [loadCategories]);
 
-  const handleCreate = async (name: string, type: TransactionType) => {
+  const handleCreate = async (name: string, type: 'expense' | 'income') => {
     const res = await createCategory(userId, name, type);
     if (res.success) loadCategories();
     return res;

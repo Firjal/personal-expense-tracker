@@ -177,14 +177,6 @@ BEGIN
     (NEW.id, 'Hadiah', 'income', TRUE),
     (NEW.id, 'Lainnya', 'income', TRUE);
 
-  -- Insert default Tabungan (Savings) Categories
-  INSERT INTO public.categories (user_id, name, type, is_default) VALUES
-    (NEW.id, 'Tabungan Umum', 'savings', TRUE),
-    (NEW.id, 'Tabungan Laptop', 'savings', TRUE),
-    (NEW.id, 'Tabungan Kendaraan', 'savings', TRUE),
-    (NEW.id, 'Tabungan Pendidikan', 'savings', TRUE),
-    (NEW.id, 'Lainnya', 'savings', TRUE);
-
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

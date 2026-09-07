@@ -1,6 +1,6 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { DemoStore } from '@/lib/storage/demo-store';
-import { Category, TransactionType } from '@/lib/types';
+import { Category } from '@/lib/types';
 
 export async function fetchCategories(userId: string): Promise<Category[]> {
   if (!isSupabaseConfigured()) {
@@ -20,12 +20,21 @@ export async function fetchCategories(userId: string): Promise<Category[]> {
     return [];
   }
 
-  return data as Category[];
+  return (data as Category[]).filter(
+    c => c.type !== 'savings' && !c.name.toLowerCase().includes('tabungan')
+  );
 }
 
-export async function createCategory(userId: string, name: string, type: TransactionType): Promise<{ success: boolean; category?: Category; error?: string }> {
+export async function createCategory(
+  userId: string,
+  name: string,
+  type: 'expense' | 'income'
+): Promise<{ success: boolean; category?: Category; error?: string }> {
   if (!name.trim()) {
     return { success: false, error: 'Nama kategori wajib diisi.' };
+  }
+  if (type !== 'expense' && type !== 'income') {
+    return { success: false, error: 'Tipe kategori hanya boleh Pengeluaran atau Pemasukan.' };
   }
 
   if (!isSupabaseConfigured()) {

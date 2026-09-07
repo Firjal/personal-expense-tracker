@@ -23,6 +23,29 @@ export async function fetchSavingsGoals(userId: string): Promise<SavingsGoal[]> 
   return data as SavingsGoal[];
 }
 
+export async function fetchTotalSavings(userId: string): Promise<number> {
+  if (!isSupabaseConfigured()) {
+    const txs = DemoStore.getTransactions(userId);
+    return txs
+      .filter(t => t.type === 'savings')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('type', 'savings');
+
+  if (error) {
+    console.error('Error fetching total savings:', error);
+    return 0;
+  }
+
+  return (data || []).reduce((sum, t) => sum + Number(t.amount), 0);
+}
+
 export async function createSavingsGoal(
   userId: string,
   data: {
@@ -134,8 +157,7 @@ export async function fetchSavingsHistory(
   savingsGoalId: string
 ): Promise<SavingsTransaction[]> {
   if (!isSupabaseConfigured()) {
-    // Demo mode: return empty history
-    return [];
+    return DemoStore.getSavingsHistory(userId, savingsGoalId);
   }
 
   const supabase = createClient();

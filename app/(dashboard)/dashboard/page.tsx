@@ -47,9 +47,18 @@ export default function DashboardPage() {
   const [selectedType, setSelectedType] = useState<TransactionType | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  const handleTypeChange = (type: TransactionType | 'all') => {
+    setSelectedType(type);
+    if (type === 'savings') {
+      setSelectedCategory('');
+    }
+  };
+
   const loadData = useCallback(async () => {
     if (!isReady) return;
     setIsLoading(true);
+
+    const activeCategoryId = selectedType === 'savings' ? undefined : (selectedCategory || undefined);
 
     const [sumData, txData, catData] = await Promise.all([
       getMonthlySummary(userId, currentMonth, currentYear),
@@ -57,7 +66,7 @@ export default function DashboardPage() {
         month: currentMonth,
         year: currentYear,
         type: selectedType,
-        categoryId: selectedCategory || undefined,
+        categoryId: activeCategoryId,
         searchQuery: searchQuery || undefined,
       }),
       fetchCategories(userId),
@@ -193,7 +202,7 @@ export default function DashboardPage() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedType={selectedType}
-          onTypeChange={setSelectedType}
+          onTypeChange={handleTypeChange}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
         />

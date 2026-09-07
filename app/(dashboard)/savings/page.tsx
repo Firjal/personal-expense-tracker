@@ -9,6 +9,7 @@ import { SavingsHistoryModal } from '@/components/savings/SavingsHistoryModal';
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
 import {
   fetchSavingsGoals,
+  fetchTotalSavings,
   createSavingsGoal,
   updateSavingsGoal,
   deleteSavingsGoal,
@@ -21,6 +22,7 @@ export default function SavingsPage() {
   const { userId, isReady } = useCurrentUser();
 
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [totalSavings, setTotalSavings] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals
@@ -33,17 +35,21 @@ export default function SavingsPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [historyGoal, setHistoryGoal] = useState<SavingsGoal | null>(null);
 
-  const loadGoals = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!isReady) return;
     setIsLoading(true);
-    const data = await fetchSavingsGoals(userId);
-    setGoals(data);
+    const [goalsData, totalSavingsData] = await Promise.all([
+      fetchSavingsGoals(userId),
+      fetchTotalSavings(userId),
+    ]);
+    setGoals(goalsData);
+    setTotalSavings(totalSavingsData);
     setIsLoading(false);
   }, [userId, isReady]);
 
   useEffect(() => {
-    loadGoals();
-  }, [loadGoals]);
+    loadData();
+  }, [loadData]);
 
   const handleCreateOrUpdateGoal = async (data: {
     name: string;
@@ -58,7 +64,7 @@ export default function SavingsPage() {
     }
 
     if (res.success) {
-      loadGoals();
+      loadData();
     }
     return res;
   };
@@ -67,7 +73,7 @@ export default function SavingsPage() {
     if (confirm('Apakah Anda yakin ingin menghapus target tabungan ini?')) {
       const res = await deleteSavingsGoal(userId, id);
       if (res.success) {
-        loadGoals();
+        loadData();
       }
     }
   };
@@ -80,7 +86,7 @@ export default function SavingsPage() {
   ) => {
     const res = await addSavingsDeposit(userId, goalId, amount, date, notes);
     if (res.success) {
-      loadGoals();
+      loadData();
     }
     return res;
   };
@@ -105,7 +111,6 @@ export default function SavingsPage() {
     setIsHistoryModalOpen(true);
   };
 
-  const totalSavedAllGoals = goals.reduce((sum, g) => sum + Number(g.current_amount), 0);
   const totalTargetAllGoals = goals.reduce((sum, g) => sum + Number(g.target_amount), 0);
 
   return (
@@ -138,10 +143,12 @@ export default function SavingsPage() {
             Total Seluruh Tabungan Terkumpul
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-sky-400">
-            {formatRupiah(totalSavedAllGoals)}
-            <span className="text-sm text-slate-400 font-normal ml-2">
-              dari total target {formatRupiah(totalTargetAllGoals)}
-            </span>
+            {formatRupiah(totalSavings)}
+            {totalTargetAllGoals > 0 && (
+              <span className="text-sm text-slate-400 font-normal ml-2">
+                dari total target {formatRupiah(totalTargetAllGoals)}
+              </span>
+            )}
           </h2>
         </div>
 
