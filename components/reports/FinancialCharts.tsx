@@ -217,7 +217,7 @@ export function FinancialCharts({ transactions, month, year }: FinancialChartsPr
               <XAxis type="number" stroke="#64748b" fontSize={11} tickFormatter={val => `Rp${val / 1000}k`} />
               <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={12} tickLine={false} width={100} />
               <Tooltip
-                formatter={(val: number) => [formatRupiah(val), 'Total']}
+                formatter={(val) => [formatRupiah(typeof val === 'number' ? val : 0), 'Total']}
                 contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }}
                 itemStyle={{ color: '#e2e8f0', fontSize: '12px' }}
               />
