@@ -8,7 +8,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Personal Expense Tracker — Kelola Keuangan Pribadi',
+  title: 'JallTracker',
+  applicationName: 'JallTracker',
   description:
     'Aplikasi pencatat pengeluaran, pemasukan, dan target tabungan pribadi yang aman, modern, dan scalable.',
 };

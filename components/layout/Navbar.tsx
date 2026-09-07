@@ -38,14 +38,9 @@ export function Navbar({ user }: NavbarProps) {
             <div className="p-2 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
-                ExpenseTracker
-              </span>
-              <span className="hidden sm:inline-block ml-1.5 text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">
-                Personal
-              </span>
-            </div>
+            <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+              JallTracker
+            </span>
           </Link>
 
           {/* Desktop Navigation Links */}

@@ -15,7 +15,7 @@ export default function LandingPage() {
             <Wallet className="w-6 h-6 text-white" />
           </div>
           <span className="font-extrabold text-xl tracking-tight text-white">
-            ExpenseTracker
+            JallTracker
           </span>
         </div>
       </header>
@@ -83,7 +83,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500 relative z-10">
-        © 2026 Personal Expense Tracker • Next.js & Supabase Powered
+        © 2026 JallTracker • Next.js & Supabase Powered
       </footer>
     </div>
   );

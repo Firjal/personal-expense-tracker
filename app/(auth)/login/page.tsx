@@ -48,7 +48,7 @@ function LoginContent() {
         </div>
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Personal Expense Tracker
+            JallTracker
           </h1>
           <p className="text-sm text-slate-400">
             Masuk untuk mengelola keuangan Anda
